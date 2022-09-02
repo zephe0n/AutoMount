@@ -1,0 +1,13 @@
+﻿{
+    "Id": "AutoMount",
+    "DisplayName": "Auto Mount",
+    "Author": "zepheon",
+    "Version": "0.0.1",
+    "ManagerVersion": "0.24.5.0",
+    "GameVersion": "1.4.2",
+    "Requirements": [],
+    "AssemblyName": "AutoMount.dll",
+    "EntryMethod": "AutoMount.Main.Load",
+    "Repository": "https://raw.githubusercontent.com/zephe0n/AutoMount/main/AutoMount/Repository.json",
+    "HomePage": "https://github.com/zephe0n/AutoMount"
+}
