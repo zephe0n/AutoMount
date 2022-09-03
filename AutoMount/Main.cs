@@ -2,10 +2,11 @@
 using UnityModManagerNet;
 using System.Reflection;
 using static UnityModManagerNet.UnityModManager.ModEntry;
-using Kingmaker.PubSubSystem;
-using Kingmaker.EntitySystem.Entities;
 using Kingmaker;
 using Kingmaker.UnitLogic.Parts;
+using UnityEngine;
+using AutoMount.Events;
+using Kingmaker.PubSubSystem;
 
 namespace AutoMount
 {
@@ -19,7 +20,9 @@ namespace AutoMount
         public static ModLogger Logger;
 
         private static Harmony m_harmony;
+        private static OnAreaLoad m_area_load_handler;
         private static Guid m_mount_ability_guid = new Guid("d340d820867cf9741903c9be9aed1ccc");
+        private static bool m_force_mount = false;
 
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
@@ -34,6 +37,10 @@ namespace AutoMount
 #endif
             m_harmony = new Harmony(modEntry.Info.Id);
             m_harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+            m_area_load_handler = new OnAreaLoad();
+            EventBus.Subscribe(m_area_load_handler);
+
             return true;
         }
 
@@ -47,6 +54,7 @@ namespace AutoMount
         static bool Unload(UnityModManager.ModEntry modEntry)
         {
             m_harmony.UnpatchAll();
+            EventBus.Unsubscribe(m_area_load_handler);
             return true;
         }
 #endif
@@ -63,13 +71,31 @@ namespace AutoMount
 
         static void OnUpdate(UnityModManager.ModEntry modEntry, float delta)
         {
-            if (Settings.AutoMountHotKey.Up())
+            if (Main.m_force_mount)
             {
-                Mount();
+                Mount(true);
+                Main.m_force_mount = false;
+            }
+            else
+            {
+                if (Settings.MountHotKey.Up())
+                {
+                    Mount(true);
+                }
+
+                if (Settings.DismountHotKey.Up())
+                {
+                    Mount(false);
+                }
             }
         }
 
-        static void Mount()
+        public static void ForceMount()
+        {
+            Main.m_force_mount = true;
+        }
+
+        public static void Mount(bool on)
         {
             foreach (var rider in Game.Instance.Player.Party)
             {
@@ -81,19 +107,23 @@ namespace AutoMount
 
                     if (mount != null)
                     {
-                        if (mount.IsOn)
+                        if (mount.IsOn && !on)
                         {
-#if DEBUG
-                            Logger.Log(rider.CharacterName + " -> " + pet.CharacterName + " OFF");
-#endif
                             rider.RiderPart?.Dismount();
+
+                            if (Settings.ConsoleOutput)
+                            {
+                                Utils.ConsoleLog(rider.CharacterName + " -> " + pet.CharacterName + " OFF", Color.blue);
+                            }
                         }
-                        else
+                        else if (!mount.IsOn && on)
                         {
-#if DEBUG
-                            Logger.Log(rider.CharacterName + " -> " + pet.CharacterName + " ON");
-#endif
                             rider.Ensure<UnitPartRider>().Mount(pet);
+
+                            if (Settings.ConsoleOutput)
+                            {
+                                Utils.ConsoleLog(rider.CharacterName + " -> " + pet.CharacterName + " ON", Color.blue);
+                            }
                         }
                     }
                 }
