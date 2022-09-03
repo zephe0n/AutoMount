@@ -30,6 +30,9 @@
 			<HintPath>$(WrathPath)\Wrath_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
+		<Reference Include="Owlcat.Runtime.Core">
+		  <HintPath>..\..\..\..\..\Juegos\Steam\steamapps\common\Pathfinder Second Adventure\Wrath_Data\Managed\Owlcat.Runtime.Core.dll</HintPath>
+		</Reference>
 		<Reference Include="Owlcat.Runtime.UI">
 			<HintPath>$(WrathPath)\Wrath_Data\Managed\Owlcat.Runtime.UI.dll</HintPath>
 		</Reference>

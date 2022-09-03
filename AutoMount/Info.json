@@ -2,7 +2,7 @@
     "Id": "AutoMount",
     "DisplayName": "Auto Mount",
     "Author": "zepheon",
-    "Version": "0.0.1",
+    "Version": "0.1.0",
     "ManagerVersion": "0.24.5.0",
     "GameVersion": "1.4.2",
     "Requirements": [],
