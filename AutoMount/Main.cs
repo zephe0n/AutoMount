@@ -7,6 +7,7 @@ using Kingmaker.UnitLogic.Parts;
 using UnityEngine;
 using AutoMount.Events;
 using Kingmaker.PubSubSystem;
+using Kingmaker.Blueprints.JsonSystem;
 
 namespace AutoMount
 {
@@ -15,7 +16,7 @@ namespace AutoMount
 #endif
     public static class Main
     {
-        public static Settings Settings;
+        //public static Settings Settings;
         public static bool Enabled;
         public static ModLogger Logger;
 
@@ -27,7 +28,10 @@ namespace AutoMount
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
             Logger = modEntry.Logger;
-            Settings = Settings.Load<Settings>(modEntry);
+
+            Logger.Log("Unloading");
+
+            //Settings = Settings.Load<Settings>(modEntry);
             modEntry.OnToggle = OnToggle;
             modEntry.OnGUI = OnGUI;
             modEntry.OnSaveGUI = OnSaveGUI;
@@ -53,6 +57,7 @@ namespace AutoMount
 #if DEBUG
         static bool Unload(UnityModManager.ModEntry modEntry)
         {
+            Logger.Log("Unloading");
             m_harmony.UnpatchAll();
             EventBus.Unsubscribe(m_area_load_handler);
             return true;
@@ -61,12 +66,12 @@ namespace AutoMount
 
         static void OnGUI(UnityModManager.ModEntry modEntry)
         {
-            Settings.Draw();
+            //Settings.Draw();
         }
 
         static void OnSaveGUI(UnityModManager.ModEntry modEntry)
         {
-            Settings.Save(modEntry);
+            //Settings.Save(modEntry);
         }
 
         static void OnUpdate(UnityModManager.ModEntry modEntry, float delta)
@@ -75,18 +80,6 @@ namespace AutoMount
             {
                 Mount(true);
                 Main.m_force_mount = false;
-            }
-            else
-            {
-                if (Settings.MountHotKey.Up())
-                {
-                    Mount(true);
-                }
-
-                if (Settings.DismountHotKey.Up())
-                {
-                    Mount(false);
-                }
             }
         }
 
@@ -101,6 +94,10 @@ namespace AutoMount
             {
                 var pet = rider.GetPet(Kingmaker.Enums.PetType.AnimalCompanion);
 
+                /* Dead people don't ride */
+                if (rider.State.IsDead || pet.State.IsDead)
+                    continue;
+
                 if (pet != null && (rider.State.Size < pet.State.Size))
                 {
                     var mount = rider.ActivatableAbilities.Enumerable.Find(a => a.Blueprint.AssetGuid.CompareTo(m_mount_ability_guid) == 0);
@@ -111,7 +108,7 @@ namespace AutoMount
                         {
                             rider.RiderPart?.Dismount();
 
-                            if (Settings.ConsoleOutput)
+                            if (Settings.IsEnabled(Settings.ConsoleOutput))
                             {
                                 Utils.ConsoleLog(rider.CharacterName + " -> " + pet.CharacterName + " OFF", Color.blue);
                             }
@@ -120,7 +117,7 @@ namespace AutoMount
                         {
                             rider.Ensure<UnitPartRider>().Mount(pet);
 
-                            if (Settings.ConsoleOutput)
+                            if (Settings.IsEnabled(Settings.ConsoleOutput))
                             {
                                 Utils.ConsoleLog(rider.CharacterName + " -> " + pet.CharacterName + " ON", Color.blue);
                             }
@@ -130,4 +127,24 @@ namespace AutoMount
             }
         }
     }
+
+    //[HarmonyPatch(typeof(BlueprintsCache))]
+    //static class BlueprintsCache_Postfix
+    //{
+    //    static bool Initialized;
+
+    //    [HarmonyPatch(nameof(BlueprintsCache.Init)), HarmonyPostfix]
+    //    static void Postfix()
+    //    {
+    //        if (Initialized)
+    //        {
+    //            Main.Logger.Log("Settings already initialized");
+    //            return;
+    //        }
+
+    //        Initialized = true;
+
+    //        Settings.Init();
+    //    }
+    //}
 }

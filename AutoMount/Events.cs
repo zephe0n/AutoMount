@@ -6,7 +6,9 @@ namespace AutoMount.Events
     {
         public void OnAreaDidLoad()
         {
-            if (Main.Settings.MountOnAreaEnter)
+            Settings.Init();
+
+            if (Settings.IsEnabled(Settings.MountOnAreaEnter))
             {
                 Main.ForceMount();
             }

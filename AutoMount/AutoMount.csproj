@@ -31,7 +31,7 @@
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="Owlcat.Runtime.Core">
-		  <HintPath>..\..\..\..\..\Juegos\Steam\steamapps\common\Pathfinder Second Adventure\Wrath_Data\Managed\Owlcat.Runtime.Core.dll</HintPath>
+			<HintPath>$(WrathPath)\Wrath_Data\Managed\Owlcat.Runtime.Core.dll</HintPath>
 		</Reference>
 		<Reference Include="Owlcat.Runtime.UI">
 			<HintPath>$(WrathPath)\Wrath_Data\Managed\Owlcat.Runtime.UI.dll</HintPath>
@@ -52,6 +52,10 @@
 		</Reference>
 		<Reference Include="UnityModManager">
 			<HintPath>$(WrathPath)\Wrath_Data\Managed\UnityModManager\UnityModManager.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="ModMenu">
+			<HintPath>$(WrathPath)\Mods\ModMenu\ModMenu.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 	</ItemGroup>
