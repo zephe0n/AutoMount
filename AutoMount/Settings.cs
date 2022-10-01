@@ -1,6 +1,9 @@
 ﻿using AutoMount;
 using Epic.OnlineServices;
+using HarmonyLib;
+using Kingmaker.Blueprints.JsonSystem;
 using Kingmaker.Localization;
+using Kingmaker.Settings;
 using Kingmaker.UI;
 using ModMenu.Settings;
 using UnityEngine;
@@ -53,7 +56,7 @@ namespace AutoMount
         private static bool Initialized = false;
 
         /* Keys */
-        private static readonly string KeyRoot = "automount";
+        private static readonly string RootKey = "automount";
         private static readonly string Hotkeys = "hotkeys";
         private static readonly string Whitelist = "whitelist";
         public static readonly string MountOnAreaEnter = "areaentermount";
@@ -61,7 +64,7 @@ namespace AutoMount
         public static readonly string MountHotKey = $"{Hotkeys}.mounthotkey";
         public static readonly string DismountHotKey = $"{Hotkeys}.dismounthotkey";
 
-        private static SettingsBuilder settings = SettingsBuilder.New(KeyRoot, GetString(GetKey("title"), "Auto Mount"));
+        private static SettingsBuilder settings = SettingsBuilder.New(RootKey, GetString(GetKey("title"), "Auto Mount"));
 
         public static void Init()
         {
@@ -78,18 +81,51 @@ namespace AutoMount
                 Toggle.New(
                     GetKey(MountOnAreaEnter),
                     true,
-                    GetString(GetKey(MountOnAreaEnter), "Always mount when entering area")));
+                    GetString($"{MountOnAreaEnter}-desc", "Always mount when entering area"))
+                .WithLongDescription(GetString($"{MountOnAreaEnter}-desc-long", "Automatically mounts all whitelisted party members when entering a new area.")));
 
             settings.AddToggle(
                 Toggle.New(
                     GetKey(ConsoleOutput),
-                    true,
-                    GetString(GetKey(ConsoleOutput), "Enable console output")));
+                    false,
+                    GetString($"{ConsoleOutput}-desc", "Enable console output"))
+                .WithLongDescription(GetString($"{ConsoleOutput}-desc-long", "Enables output of mod functional information in combat console log. Mainly for debugging purposes.")));
 
             /* Hotkeys */
-            var hotkeys = settings.AddSubHeader(GetString(GetKey(Hotkeys), "Hotkeys"), true);
-            hotkeys.AddKeyBinding(KeyBinding.New(GetKey(MountHotKey), KeyboardAccess.GameModesGroup.All, GetString(GetKey(MountHotKey), "Mount")).SetPrimaryBinding(KeyCode.A, withCtrl:true, withShift:true), () => Main.Mount(true));
-            hotkeys.AddKeyBinding(KeyBinding.New(GetKey(DismountHotKey), KeyboardAccess.GameModesGroup.All, GetString(GetKey(DismountHotKey), "Dismount")).SetPrimaryBinding(KeyCode.D, withCtrl: true, withShift: true), () => Main.Mount(false));
+            var hotkeys = settings.AddSubHeader(GetString(Hotkeys, "Hotkeys"), true);
+            hotkeys.AddKeyBinding(
+                KeyBinding.New(
+                    GetKey(MountHotKey),
+                    KeyboardAccess.GameModesGroup.All,
+                    GetString($"{MountHotKey}-desc", "Mount"))
+                .SetPrimaryBinding(KeyCode.A, withCtrl: true, withShift: true)
+                .WithLongDescription(GetString($"{MountHotKey}-desc-long", "Sets hotkey for automatically mounting all whitelisted party members.")),
+                () => Main.Mount(true));
+
+            hotkeys.AddKeyBinding(
+                KeyBinding.New(
+                    GetKey(DismountHotKey),
+                    KeyboardAccess.GameModesGroup.All,
+                    GetString($"{DismountHotKey}-desc", "Dismount"))
+                .SetPrimaryBinding(KeyCode.D, withCtrl: true, withShift: true)
+                .WithLongDescription(GetString($"{DismountHotKey}-desc-long", "Sets hotkey for automatically dismounting all whitelisted party members.")),
+                () => Main.Mount(false));
+
+            /* Whitelist */
+            var whitelist = settings.AddSubHeader(GetString(Whitelist, "Character Whitelist"), true);
+
+            for (int i = 0; i < 6; i++)
+            {
+                whitelist.AddToggle(
+                    Toggle.New(
+                        GetSlotKey(i),
+                        true,
+                        GetString($"{GetSlotPartialKey(i)}-desc", $"Slot {i + 1}"))
+                    .WithLongDescription(
+                        GetString($"{GetSlotPartialKey(i)}-desc-long",
+                        $"Enables automatic mount for party member in slot {i + 1}. (You can change party order by dragging character portraits)")));
+            }
+
 
             ModMenu.ModMenu.AddSettings(settings);
 
@@ -98,24 +134,48 @@ namespace AutoMount
             Main.Logger.Log("Settings Initialized");
         }
 
-        //public static void CreateWhitelist()
+        //public static void Update()
         //{
-        //    settings.
         //}
+
+        public static string GetSlotKey(int slot)
+        {
+            return GetKey($"slot-{slot}");
+        }
+
+        private static string GetSlotPartialKey(int slot)
+        {
+            return $"slot-{slot}";
+        }
 
         internal static bool IsEnabled(string key)
         {
             return ModMenu.ModMenu.GetSettingValue<bool>(GetKey(key));
         }
 
+        internal static bool IsSlotEnabled(int slot)
+        {
+            return ModMenu.ModMenu.GetSettingValue<bool>(GetSlotKey(slot));
+        }
+
         private static string GetKey(string partialKey)
         {
-            return $"{KeyRoot}.{partialKey}";
+            return $"{RootKey}.{partialKey}";
         }
 
         private static LocalizedString GetString(string partialKey, string text)
         {
             return Helpers.CreateString(GetKey(partialKey), text);
+        }
+    }
+
+    [HarmonyPatch(typeof(BlueprintsCache))]
+    static class BlueprintsCache_Postfix
+    {
+        [HarmonyPatch(nameof(BlueprintsCache.Init)), HarmonyPostfix]
+        static void Postfix()
+        {
+            Settings.Init();
         }
     }
 }

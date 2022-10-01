@@ -29,7 +29,7 @@ namespace AutoMount
         {
             Logger = modEntry.Logger;
 
-            Logger.Log("Unloading");
+            Logger.Log("Loading");
 
             //Settings = Settings.Load<Settings>(modEntry);
             modEntry.OnToggle = OnToggle;
@@ -90,16 +90,26 @@ namespace AutoMount
 
         public static void Mount(bool on)
         {
-            foreach (var rider in Game.Instance.Player.Party)
+            foreach (var (rider, idx) in Game.Instance.Player.Party.Select((rider, idx) => (rider, idx)))
             {
-                var pet = rider.GetPet(Kingmaker.Enums.PetType.AnimalCompanion);
-
-                /* Dead people don't ride */
-                if (rider.State.IsDead || pet.State.IsDead)
+                if (!Settings.IsSlotEnabled(idx))
                     continue;
+
+                var pet = rider.GetPet(Kingmaker.Enums.PetType.AnimalCompanion);
 
                 if (pet != null && (rider.State.Size < pet.State.Size))
                 {
+                    /* Deadge people don't ride */
+                    if (rider.State.IsDead || pet.State.IsDead)
+                    {
+                        if (Settings.IsEnabled(Settings.ConsoleOutput))
+                        {
+                            Utils.ConsoleLog(rider.CharacterName + " -> " + pet.CharacterName + " DEADGE", Color.red);
+                        }
+
+                        continue;
+                    }
+
                     var mount = rider.ActivatableAbilities.Enumerable.Find(a => a.Blueprint.AssetGuid.CompareTo(m_mount_ability_guid) == 0);
 
                     if (mount != null)
@@ -127,24 +137,4 @@ namespace AutoMount
             }
         }
     }
-
-    //[HarmonyPatch(typeof(BlueprintsCache))]
-    //static class BlueprintsCache_Postfix
-    //{
-    //    static bool Initialized;
-
-    //    [HarmonyPatch(nameof(BlueprintsCache.Init)), HarmonyPostfix]
-    //    static void Postfix()
-    //    {
-    //        if (Initialized)
-    //        {
-    //            Main.Logger.Log("Settings already initialized");
-    //            return;
-    //        }
-
-    //        Initialized = true;
-
-    //        Settings.Init();
-    //    }
-    //}
 }
